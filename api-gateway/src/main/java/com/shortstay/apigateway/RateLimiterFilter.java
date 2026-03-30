@@ -15,18 +15,28 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RateLimiterFilter implements GlobalFilter, Ordered {
 
     private final Map<String, Integer> requestCounts = new ConcurrentHashMap<>();
+    private final Map<String, Long> lastRequestTime = new ConcurrentHashMap<>();
+    private static final long TIME_WINDOW_MS = 60000;
+    private static final int MAX_REQUESTS = 3;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
         if (path.contains("/api/listings") || path.contains("/api/reservations")) {
-
             String clientIp = exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
+            long currentTime = System.currentTimeMillis();
+
+
+            lastRequestTime.putIfAbsent(clientIp, currentTime);
+            if (currentTime - lastRequestTime.get(clientIp) > TIME_WINDOW_MS) {
+                requestCounts.put(clientIp, 0);
+                lastRequestTime.put(clientIp, currentTime);
+            }
+
             int count = requestCounts.getOrDefault(clientIp, 0);
 
-
-            if (count >= 3) {
+            if (count >= MAX_REQUESTS) {
                 exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
                 return exchange.getResponse().setComplete();
             }
@@ -38,7 +48,5 @@ public class RateLimiterFilter implements GlobalFilter, Ordered {
     }
 
     @Override
-    public int getOrder() {
-        return -1;
-    }
+    public int getOrder() { return -1; }
 }
