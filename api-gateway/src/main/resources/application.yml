@@ -1,0 +1,26 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Ana API rotası
+        - id: shortstay-api
+          uri: http://localhost:8080
+          predicates:
+            - Path=/api/**
+
+        # Swagger Dokümantasyon Rotası
+        - id: openapi-docs
+          uri: http://localhost:8080
+          predicates:
+            - Path=/v3/api-docs/**
+
+        # Swagger UI Arayüz Rotası
+        - id: swagger-ui
+          uri: http://localhost:8080
+          predicates:
+            - Path=/swagger-ui/**
