@@ -124,6 +124,22 @@ POST,/api/admin/upload,Upload administrative data/files,Yes (Admin)
 
 GET,/api/admin/report,Generate and retrieve system reports,Yes (Admin)
 
+# 🛡️ API Gateway Security: Rate Limiting Implementation
+To protect the system from potential DoS (Denial of Service) attacks and to ensure fair resource allocation, I implemented a custom Rate Limiting mechanism within the API Gateway.
+
+Technical Design:
+Filter Level: It operates as a GlobalFilter within the Spring Cloud Gateway, intercepting requests before they reach the core microservices.
+
+Logic: The filter identifies users by their Client IP Address. It uses a ConcurrentHashMap to track the number of requests sent from each unique IP within a sliding time window.
+
+Endpoints Covered: Specifically enforced on high-traffic routes such as /api/listings/** and /api/reservations/**.
+
+Policy: A strict limit of 3 requests is allowed. If a 4th request is detected within the time frame, the Gateway rejects it immediately to save backend processing power.
+
+# Verification (Postman Test Proof):
+The screenshot below demonstrates the filter in action. After 3 successful calls, the 4th consecutive attempt results in an HTTP 429 Too Many Requests status code, confirming the security layer is active.
+
+![postman](https://github.com/user-attachments/assets/63e48967-3bd9-4d80-8395-bd15cacb3a93)
 
 # 🚀 Load Testing Report (k6)
 Results (100 Concurrent Users)
